@@ -39,24 +39,21 @@ def get_curr_season():
 
 def main():
     url = 'https://acgsecrets.hk/bangumi/{}/'.format(get_curr_season())
-    print(url)
+    
     page_text = requests.get(url=url, headers=headers).content
     soup = BeautifulSoup(page_text, 'html.parser')
     content = soup.find('div', {'id':'acgs-anime-icons'})
     animes = content.find_all('div', recursive=False)
-    
-    file = io.open('anime_list.csv', 'w', encoding='utf-8')
-    writer = csv.writer(file)
-    
+    anime_list = []
+
     for anime in animes:
         name = anime.find('div', {'class':'anime_name'}).text
         date = day[anime.find('div', {'class':'day'}).text]
         time = anime.find('div', {'class':'time'}).text
         img = anime.find('img', {'class':'img-fit-cover'})['src']
+        anime_list.append([name, date, time, img])
 
-        writer.writerow([name, date, time, img])
-    
-    file.close()
+    return anime_list
     
     
     
