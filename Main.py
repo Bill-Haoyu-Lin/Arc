@@ -5,13 +5,14 @@ import webbrowser
 import requests
 import scrape
 import datetime
+import time
 
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("image_example.py")
-        self.geometry("700x450")
+        self.title("Arc")
+        self.geometry("800x350")
 
         # set grid layout 1x2
         self.grid_rowconfigure(0, weight=1)
@@ -42,7 +43,7 @@ class App(customtkinter.CTk):
         self.navigation_frame.grid(row=0, column=0, sticky="nsew")
         self.navigation_frame.grid_rowconfigure(4, weight=1)
 
-        self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  Alexa", image=self.logo_image,
+        self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  Arc Demo", image=self.logo_image,
                                                              compound="left", font=customtkinter.CTkFont(size=15, weight="bold"))
         self.navigation_frame_label.grid(row=0, column=0, padx=20, pady=20)
 
@@ -69,12 +70,15 @@ class App(customtkinter.CTk):
         self.home_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.home_frame.grid_columnconfigure(0, weight=1)
 
+        self.clock_label = customtkinter.CTkLabel(self.home_frame,font=("Courier New", 15,'bold'), text='')
+        self.clock_label.grid(row=0, column=0,columnspan=2, padx=2, pady=10)
+
         self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_frame, text="", image=self.large_test_image)
-        self.home_frame_large_image_label.grid(row=0, column=0,columnspan=2, padx=20, pady=10)
+        self.home_frame_large_image_label.grid(row=1, column=0,columnspan=2, padx=20, pady=10)
         self.home_button_1 = customtkinter.CTkButton(self.home_frame, text=" Place Holder Function ")
-        self.home_button_1.grid(row=1, column=0, padx=10, pady=10)
+        self.home_button_1.grid(row=2, column=0, padx=10, pady=10)
         self.home_button_2 = customtkinter.CTkButton(self.home_frame, text="Place Holder Function ",command = lambda:self.open_web("tianguo"))
-        self.home_button_2.grid(row=1, column=1, padx=10, pady=10) 
+        self.home_button_2.grid(row=2, column=1, padx=10, pady=10) 
 
         self.home_buttons_frame = customtkinter.CTkScrollableFrame(self.home_frame, label_text="Anime List")
         self.home_buttons_frame.grid(row=0, column=2, rowspan=2,padx=(20, 0), pady=(20, 0), sticky="nsew")
@@ -89,13 +93,20 @@ class App(customtkinter.CTk):
         self.frame_2_button_4 = customtkinter.CTkButton(self.second_frame, text="CTkButton", image=self.image_icon_image, compound="right", anchor="center")
         self.frame_2_button_4.grid(row=1, column=0, padx=20, pady=10)
 
+
         # create third frame
         self.third_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
 
 
-
         # select default frame
         self.select_frame_by_name("home")
+        self.check_time()
+
+    def check_time(self):
+        self.clock_label.configure(text=datetime.datetime.now().replace(microsecond=0))
+        current_time = datetime.datetime.now()
+        self.clock_label.after(1000, self.check_time)
+
     def open_web(self,keyword):
         webbrowser.open_new("https://www.iyf.tv/search/"+keyword)
 
@@ -103,11 +114,13 @@ class App(customtkinter.CTk):
         image = customtkinter.CTkImage(Image.open(requests.get(url, stream=True).raw), size=(x, y))
         return image
     
+    #genearate button list for anime of the day
     def get_anime_list(self):
         count = 0
         self.anime_today = dict()
         for anime in self.anime_list:
             if self.day_of_week == anime[1]:
+                #initialize the buttons and connect callback function to open relative webpage. 
                 self.anime_today[count]=customtkinter.CTkButton(self.home_buttons_frame, text=anime[0], 
                                                            image=self.get_img(anime[3]), compound="top",
                                                            command=lambda a = anime[0]: self.open_web(a ))
