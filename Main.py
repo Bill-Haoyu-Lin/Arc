@@ -6,6 +6,7 @@ import requests
 import scrape
 import datetime
 import time
+import vlc
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -13,7 +14,8 @@ class App(customtkinter.CTk):
 
         self.title("Arc")
         self.geometry("800x350")
-
+        self.char_list = ['Верный','Warspite','Kawakaze','Yura','Ark_Royal']
+        self.char_pos = 0
         # set grid layout 1x2
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -24,6 +26,7 @@ class App(customtkinter.CTk):
 
         # load images with light and dark mode image
         image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_images")
+        char_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "Characters")
         self.logo_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "CustomTkinter_logo_single.png")), size=(26, 26))
         self.large_test_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "logo.png")), size=(200, 200))
         self.image_icon_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "image_icon_light.png")), size=(100, 100))
