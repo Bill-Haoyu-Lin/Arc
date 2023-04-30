@@ -5,8 +5,8 @@ import webbrowser
 import requests
 import scrape
 import datetime
-import time
 import vlc
+from random import *
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -14,8 +14,12 @@ class App(customtkinter.CTk):
 
         self.title("Arc")
         self.geometry("800x350")
+
+        #character list for kantai 
         self.char_list = ['Верный','Warspite','Kawakaze','Yura','Ark_Royal']
         self.char_pos = 0
+        self.kantai_is_start = False
+
         # set grid layout 1x2
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -26,7 +30,7 @@ class App(customtkinter.CTk):
 
         # load images with light and dark mode image
         image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_images")
-        char_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "Characters")
+        self.char_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "Characters")
         self.logo_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "CustomTkinter_logo_single.png")), size=(26, 26))
         self.large_test_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "logo.png")), size=(200, 200))
         self.image_icon_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "image_icon_light.png")), size=(100, 100))
@@ -78,9 +82,13 @@ class App(customtkinter.CTk):
 
         self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_frame, text="", image=self.large_test_image)
         self.home_frame_large_image_label.grid(row=1, column=0,columnspan=2, padx=20, pady=10)
-        self.home_button_1 = customtkinter.CTkButton(self.home_frame, text=" Place Holder Function ")
+
+        self.home_button_1 = customtkinter.CTkButton(self.home_frame, text="Start Kantai",
+                                                     command = self.start_kantai)
         self.home_button_1.grid(row=2, column=0, padx=10, pady=10)
-        self.home_button_2 = customtkinter.CTkButton(self.home_frame, text="Place Holder Function ",command = lambda:self.open_web("tianguo"))
+
+        self.home_button_2 = customtkinter.CTkButton(self.home_frame, text="Next Character",
+                                                     command = self.change_char)
         self.home_button_2.grid(row=2, column=1, padx=10, pady=10) 
 
         self.home_buttons_frame = customtkinter.CTkScrollableFrame(self.home_frame, label_text="Anime List")
@@ -91,8 +99,8 @@ class App(customtkinter.CTk):
 
         # create second frame
         self.second_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
-        self.home_frame_large_image_label = customtkinter.CTkLabel(self.second_frame, text="", image=self.large_test_image)
-        self.home_frame_large_image_label.grid(row=0, column=0, padx=20, pady=10)
+        self.frame_2_large_image_label = customtkinter.CTkLabel(self.second_frame, text="", image=self.large_test_image)
+        self.frame_2_large_image_label.grid(row=0, column=0, padx=20, pady=10)
         self.frame_2_button_4 = customtkinter.CTkButton(self.second_frame, text="CTkButton", image=self.image_icon_image, compound="right", anchor="center")
         self.frame_2_button_4.grid(row=1, column=0, padx=20, pady=10)
 
@@ -105,14 +113,69 @@ class App(customtkinter.CTk):
         self.select_frame_by_name("home")
         self.check_time()
 
+    def change_char(self):
+        if self.char_pos >= len(self.char_list)-1:
+            self.char_pos-=len(self.char_list)-1
+        else:
+            self.char_pos+=1
+
+        #get correct size of image to be a square   
+        old_image = Image.open(os.path.join(self.char_path, self.get_cur_char()+".png" ))
+        im_size = old_image.size
+        if im_size[0]>im_size[1]:
+            new_w = im_size[0]
+            background = (new_w,new_w)
+            location = (0,int((new_w-im_size[1])/2))
+        else:
+            new_h = im_size[1]
+            background = (new_h,new_h)
+            location = (int((new_h-im_size[0])/2),0)
+        new_image = Image.new('RGBA', background, (0, 0, 0, 0))
+        new_image.paste(old_image,location )
+
+        #output image to update on home screen
+        image_char = customtkinter.CTkImage(new_image, size=(200, 200))
+        self.home_frame_large_image_label.configure(image=image_char)
+
+        if self.kantai_is_start:
+             self.play_sound("_Intro")
+        else:
+            pass
+
+    #Start or shut down kantain clock
+    def start_kantai(self):
+        self.kantai_is_start = not self.kantai_is_start
+
+    #Get name of current character as string
+    def get_cur_char(self):
+        return  self.char_list[self.char_pos]
+    
+    #Play Sound
+    def play_sound(self,keyword):
+        sound_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "Sounds")
+        if self.kantai_is_start:
+            sound = vlc.MediaPlayer(os.path.join(sound_path, self.get_cur_char() + str(keyword) + ".mp3"))
+            sound.play()
+        else:
+            pass
+    
+    #Update Time based on current PC time on home screen        
     def check_time(self):
         self.clock_label.configure(text=datetime.datetime.now().replace(microsecond=0))
         current_time = datetime.datetime.now()
         self.clock_label.after(1000, self.check_time)
+        if current_time.minute == 0 and current_time.second == 0:
+            self.play_sound(str(current_time.hour))
+            idle_times = [randint(5, 25),randint(35, 55)]
+        else:
+            pass
+   
 
+    #Open website on click for anime list
     def open_web(self,keyword):
         webbrowser.open_new("https://www.iyf.tv/search/"+keyword)
 
+    #Get_img from URL
     def get_img(self,url,x=100,y =100):
         image = customtkinter.CTkImage(Image.open(requests.get(url, stream=True).raw), size=(x, y))
         return image
