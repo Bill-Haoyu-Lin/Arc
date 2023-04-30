@@ -20,10 +20,10 @@ weekday = {
 now = datetime.datetime.now()
 curr_year = str(now.year)
 curr_month = now.month
-    
+
+# Current season of anime: Jan, Apr, Jul, Oct 
 def get_curr_season():
 
-    # 一/四/七/十月新番
     if curr_month >= 1 and curr_month <= 3:
         curr_season = curr_year + '01'
     elif curr_month >= 4 and curr_month <= 6:
@@ -36,9 +36,11 @@ def get_curr_season():
     return curr_season
 
 
-def main():
+def get_anime():
+    anime_list = []
+    
+    # Request from yuc.wiki
     url = 'https://yuc.wiki/{}/'.format(get_curr_season())
-    print(url)
     page_text = requests.get(url=url, headers=headers).content
     soup = BeautifulSoup(page_text, 'html.parser')
     animes = soup.find_all('div', {'style':'float:left'})
@@ -52,14 +54,9 @@ def main():
             day = weekday[date.strftime("%A")]
             time = anime.find('p', {'class':'imgep'}).text[:-1]
             img = anime.find('img')['src']
-            print(name)
-            print(day)
-            print(time)
-            print(img)
-            print()
+            
+            anime_list.append([name, day, time, img])
         except:
-            pass  
+            pass
     
-    
-if __name__ == '__main__':
-    main()
+    return anime_list

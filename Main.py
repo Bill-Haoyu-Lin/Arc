@@ -20,7 +20,7 @@ class App(customtkinter.CTk):
 
         #check day of week and import anime list 
         self.day_of_week = datetime.date.today().weekday()+1
-        self.anime_list = scrape.main()
+        self.anime_list = scrape.get_anime()
 
         # load images with light and dark mode image
         image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_images")
