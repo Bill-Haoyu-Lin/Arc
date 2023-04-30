@@ -1,5 +1,3 @@
-import io
-import csv
 import datetime
 import requests
 from bs4 import BeautifulSoup
@@ -9,20 +7,21 @@ headers = {
         'Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.53'
     }
 
-day = {
-    '一': 1,
-    '二': 2,
-    '三': 3,
-    '四': 4,
-    '五': 5,
-    '六': 6,
-    '日': 7,
+weekday = {
+    'Monday': 1,
+    'Tuesday': 2,
+    'Wednesday': 3,
+    'Thursday': 4,
+    'Friday': 5,
+    'Saturday': 6,
+    'Sunday': 7,
 }
 
+now = datetime.datetime.now()
+curr_year = str(now.year)
+curr_month = now.month
+    
 def get_curr_season():
-    now = datetime.datetime.now()
-    curr_year = str(now.year)
-    curr_month = now.month
 
     # 一/四/七/十月新番
     if curr_month >= 1 and curr_month <= 3:
@@ -38,23 +37,28 @@ def get_curr_season():
 
 
 def main():
-    url = 'https://acgsecrets.hk/bangumi/{}/'.format(get_curr_season())
-    
+    url = 'https://yuc.wiki/{}/'.format(get_curr_season())
+    print(url)
     page_text = requests.get(url=url, headers=headers).content
     soup = BeautifulSoup(page_text, 'html.parser')
-    content = soup.find('div', {'id':'acgs-anime-icons'})
-    animes = content.find_all('div', recursive=False)
-    anime_list = []
-
-    for anime in animes:
-        name = anime.find('div', {'class':'anime_name'}).text
-        date = day[anime.find('div', {'class':'day'}).text]
-        time = anime.find('div', {'class':'time'}).text
-        img = anime.find('img', {'class':'img-fit-cover'})['src']
-        anime_list.append([name, date, time, img])
-
-    return anime_list
+    animes = soup.find_all('div', {'style':'float:left'})
     
+    
+    for anime in animes:
+        try:
+            name = anime.find('td', {'class':'date_title'}).text
+            date = anime.find('p', {'class':'imgtext'}).text[:-1] + '/' + curr_year
+            date = datetime.datetime.strptime(date, "%m/%d/%Y")
+            day = weekday[date.strftime("%A")]
+            time = anime.find('p', {'class':'imgep'}).text[:-1]
+            img = anime.find('img')['src']
+            print(name)
+            print(day)
+            print(time)
+            print(img)
+            print()
+        except:
+            pass  
     
     
 if __name__ == '__main__':
