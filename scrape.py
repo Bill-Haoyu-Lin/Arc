@@ -50,10 +50,12 @@ def get_anime():
         try:
             name = anime.find('td', {'class':'date_title'}).text
             date = anime.find('p', {'class':'imgtext'}).text[:-1] + '/' + curr_year
-            date = datetime.datetime.strptime(date, "%m/%d/%Y")
-            day = weekday[date.strftime("%A")]
             time = anime.find('p', {'class':'imgep'}).text[:-1]
             img = anime.find('img')['src']
+            
+            # Convert date to day of week
+            date = datetime.datetime.strptime(date, "%m/%d/%Y")
+            day = weekday[date.strftime("%A")]
             
             anime_list.append([name, day, time, img])
         except:
