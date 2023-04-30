@@ -92,7 +92,7 @@ class App(customtkinter.CTk):
         self.home_button_2.grid(row=2, column=1, padx=10, pady=10) 
 
         self.home_buttons_frame = customtkinter.CTkScrollableFrame(self.home_frame, label_text="Anime List")
-        self.home_buttons_frame.grid(row=0, column=2, rowspan=2,padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.home_buttons_frame.grid(row=0, column=2, rowspan=3,padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.home_buttons_frame.grid_columnconfigure(0, weight=1)
         self.get_anime_list()
 
@@ -145,6 +145,11 @@ class App(customtkinter.CTk):
     #Start or shut down kantain clock
     def start_kantai(self):
         self.kantai_is_start = not self.kantai_is_start
+        if self.kantai_is_start:
+            sound_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "Sounds")
+            sound = vlc.MediaPlayer(os.path.join(sound_path, "TitleCallA" + str(randint(1, 20)) + ".mp3"))
+            sound.play()
+        self.home_button_1.configure(text="Start Kantai" if self.kantai_is_start==False else "Close Kantai")
 
     #Get name of current character as string
     def get_cur_char(self):
@@ -180,6 +185,11 @@ class App(customtkinter.CTk):
         image = customtkinter.CTkImage(Image.open(requests.get(url, stream=True).raw), size=(x, y))
         return image
     
+    def split_text(self,text):
+        length = len(text)
+        new_text ='\n'.join(text[i:i+10] for i in range(0, length, 10))
+        return new_text
+    
     #genearate button list for anime of the day
     def get_anime_list(self):
         count = 0
@@ -187,13 +197,12 @@ class App(customtkinter.CTk):
         for anime in self.anime_list:
             if self.day_of_week == anime[1]:
                 #initialize the buttons and connect callback function to open relative webpage. 
-                self.anime_today[count]=customtkinter.CTkButton(self.home_buttons_frame, text=anime[0], 
+                self.anime_today[count]=customtkinter.CTkButton(self.home_buttons_frame, text=self.split_text(anime[0]), 
                                                            image=self.get_img(anime[3]), compound="top",
                                                            command=lambda a = anime[0]: self.open_web(a ))
                 self.anime_today[count].grid(row=count, column=0, padx=20, pady=10)
                 count +=1
-    
-
+   
     def select_frame_by_name(self, name):
         # set button color for selected button
         self.home_button.configure(fg_color=("gray75", "gray25") if name == "home" else "transparent")
