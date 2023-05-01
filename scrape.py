@@ -30,7 +30,7 @@ now = datetime.datetime.now()
 curr_year = str(now.year)
 curr_month = now.month
 curr_day = now.weekday()
-print(curr_day)
+
 # Spring, summer, fall, winter season
 def get_curr_season():
     if curr_month >= 1 and curr_month <= 3:
