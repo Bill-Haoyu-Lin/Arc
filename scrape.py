@@ -44,7 +44,7 @@ def get_curr_season():
     
     return curr_season
 
-
+# Source: yuc.wiki, language: Chinese Simplified
 def anime_chs():
     anime_list = []
     url = 'https://yuc.wiki/{}/'.format(get_curr_season())
@@ -67,6 +67,7 @@ def anime_chs():
     
     return anime_list
 
+# Source: acgsecrets.hk, language: Chinese Traditional
 def anime_cht():
     anime_list = []
     url = 'https://acgsecrets.hk/bangumi/{}/'.format(get_curr_season())
@@ -85,8 +86,8 @@ def anime_cht():
 
     return anime_list
 
+# Get anime list based on desired language
 def get_anime(lang = 'chs'):
-    # Determine language of anime list
     if lang == 'chs':
         anime_list = anime_chs()
     elif lang == 'cht':
