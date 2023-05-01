@@ -110,7 +110,7 @@ class App(customtkinter.CTk):
     def open_web(self,keyword):
         webbrowser.open_new("https://www.iyf.tv/search/"+keyword)
 
-    def get_img(self,url,x=100,y =100):
+    def get_img(self, url, x = 100, y = 100):
         image = customtkinter.CTkImage(Image.open(requests.get(url, stream=True).raw), size=(x, y))
         return image
     
@@ -119,13 +119,12 @@ class App(customtkinter.CTk):
         count = 0
         self.anime_today = dict()
         for anime in self.anime_list:
-            if self.day_of_week == anime[1]:
-                #initialize the buttons and connect callback function to open relative webpage. 
-                self.anime_today[count]=customtkinter.CTkButton(self.home_buttons_frame, text=anime[0], 
-                                                           image=self.get_img(anime[3]), compound="top",
-                                                           command=lambda a = anime[0]: self.open_web(a ))
-                self.anime_today[count].grid(row=count, column=0, padx=20, pady=10)
-                count +=1
+            #initialize the buttons and connect callback function to open relative webpage. 
+            self.anime_today[count]=customtkinter.CTkButton(self.home_buttons_frame, text=anime[0], 
+                                                        image=self.get_img(anime[3]), compound="top",
+                                                        command=lambda a = anime[0]: self.open_web(a))
+            self.anime_today[count].grid(row=count, column=0, padx=20, pady=20)
+            count += 1
     
 
     def select_frame_by_name(self, name):
