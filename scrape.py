@@ -92,7 +92,7 @@ def get_anime(lang = 'chs'):
     elif lang == 'cht':
         anime_list = anime_cht()
     elif lang == 'eng':
-        pass
+        anime_list = []
     
     return anime_list
 
