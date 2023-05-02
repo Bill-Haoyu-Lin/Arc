@@ -1,4 +1,5 @@
 import re
+import pytz
 import datetime
 import requests
 from bs4 import BeautifulSoup
@@ -27,7 +28,7 @@ weekday = {
 }
 
 # Get current month and year
-now = datetime.datetime.now()
+now = datetime.datetime.now().replace(second=0, microsecond=0)
 curr_year = str(now.year)
 curr_month = now.month
 
@@ -43,6 +44,25 @@ def get_curr_season():
         curr_season = curr_year + '10'
     
     return curr_season
+
+# Convert anime start day & time from China Standard Time to local time zone
+def to_local_time(day, time):
+    tz = pytz.timezone('Asia/Shanghai')
+    china_time = datetime.datetime.now(tz).replace(second=0, microsecond=0, tzinfo=None)
+    time_diff = int((now - china_time).total_seconds() / 3600)
+    hour = int(time[:2]) + time_diff
+    
+    if hour < 0:
+        hour = 24 + hour
+        time = '0' + str(hour) + time[2:] if hour < 10 else str(hour) + time[2:]
+        if day != 0:
+            day -= 1
+        else:
+            day = 6
+    else:
+        time = '0' + str(hour) + time[2:] if hour < 10 else str(hour) + time[2:]
+        
+    return day, time
 
 # Source: yuc.wiki, language: Chinese Simplified
 def anime_chs():
@@ -71,6 +91,7 @@ def anime_chs():
                 else:
                     day = 0
 
+            day, time = to_local_time(day, time)
             anime_list.append([name, day, time, img])
         except:
             pass 
@@ -92,6 +113,7 @@ def anime_cht():
         time = anime.find('div', {'class':'time'}).text
         img = anime.find('img', {'class':'img-fit-cover'})['src']
         
+        day, time = to_local_time(day, time)
         anime_list.append([name, day, time, img])
 
     return anime_list
