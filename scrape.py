@@ -25,11 +25,10 @@ weekday = {
     '日': 6
 }
 
-# Get current date
+# Get current month and year
 now = datetime.datetime.now()
 curr_year = str(now.year)
 curr_month = now.month
-curr_day = now.weekday()
 
 # Spring, summer, fall, winter season
 def get_curr_season():
@@ -95,4 +94,6 @@ def get_anime(lang = 'chs'):
     elif lang == 'eng':
         pass
     
-    return [list for list in anime_list if list[1] == curr_day]
+    return anime_list
+
+print(get_anime('chs'))
