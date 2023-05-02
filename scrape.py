@@ -1,3 +1,4 @@
+import re
 import datetime
 import requests
 from bs4 import BeautifulSoup
@@ -53,7 +54,7 @@ def anime_chs():
     
     for anime in animes:
         try:
-            name = anime.find('td', {'class':'date_title'}).text
+            name = anime.find('td', class_=re.compile('^date_title.*')).text
             date = anime.find('p', {'class':'imgtext'}).text.split('~')[0] + '/' + curr_year
             time = anime.find('p', {'class':'imgep'}).text.split('~')[0]
             img = anime.find('img')['src']
@@ -69,7 +70,7 @@ def anime_chs():
                     day += 1
                 else:
                     day = 0
-            
+
             anime_list.append([name, day, time, img])
         except:
             pass 
@@ -110,4 +111,7 @@ def get_anime(lang = 'chs'):
     elif lang == 'eng':
         anime_list = []
     
-    return sorted(anime_list, key=sort_key)
+    anime_list = sorted(anime_list, key=sort_key)
+    # for anime in anime_list:
+    #     print(anime)
+    return anime_list
