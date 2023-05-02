@@ -1,12 +1,15 @@
 import customtkinter
 import os
 from PIL import Image
-import webbrowser
+from cefpython3 import cefpython as cef
 import requests
 import scrape
 import datetime
 import vlc
 from random import *
+#from web_widget import *
+import webbrowser
+from threading import Thread
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -14,6 +17,8 @@ class App(customtkinter.CTk):
 
         self.title("Arc")
         self.geometry("800x350")
+
+        self.browser_frame = None
 
         #character list for kantai 
         self.char_list = ['Верный','Warspite','Kawakaze','Yura','Ark_Royal']
@@ -94,20 +99,22 @@ class App(customtkinter.CTk):
         self.home_buttons_frame = customtkinter.CTkScrollableFrame(self.home_frame, label_text="Anime List")
         self.home_buttons_frame.grid(row=0, column=2, rowspan=3,padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.home_buttons_frame.grid_columnconfigure(0, weight=1)
-        self.get_anime_list()
-
+        thread1 = Thread(target = self.get_anime_list,args=())
+        thread1.start()
 
         # create second frame
         self.second_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
-        self.frame_2_large_image_label = customtkinter.CTkLabel(self.second_frame, text="", image=self.large_test_image)
-        self.frame_2_large_image_label.grid(row=0, column=0, padx=20, pady=10)
-        self.frame_2_button_4 = customtkinter.CTkButton(self.second_frame, text="CTkButton", image=self.image_icon_image, compound="right", anchor="center")
-        self.frame_2_button_4.grid(row=1, column=0, padx=20, pady=10)
-
+        
+        
+        
+        
+        
 
         # create third frame
         self.third_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
-
+        # cef.Initialize()
+        # self.browser_frame = BrowserFrame(self.third_frame)
+        # self.browser_frame.grid(row=0, column=0)
 
         # select default frame
         self.select_frame_by_name("home")
@@ -141,6 +148,25 @@ class App(customtkinter.CTk):
              self.play_sound("_Intro")
         else:
             pass
+        
+    def switch_back_char(self):
+         #get correct size of image to be a square   
+        old_image = Image.open(os.path.join(self.char_path, self.get_cur_char()+".png" ))
+        im_size = old_image.size
+        if im_size[0]>im_size[1]:
+            new_w = im_size[0]
+            background = (new_w,new_w)
+            location = (0,int((new_w-im_size[1])/2))
+        else:
+            new_h = im_size[1]
+            background = (new_h,new_h)
+            location = (int((new_h-im_size[0])/2),0)
+        new_image = Image.new('RGBA', background, (0, 0, 0, 0))
+        new_image.paste(old_image,location )
+
+        #output image to update on home screen
+        image_char = customtkinter.CTkImage(new_image, size=(200, 200))
+        self.home_frame_large_image_label.configure(image=image_char)
 
     #Start or shut down kantain clock
     def start_kantai(self):
@@ -149,6 +175,9 @@ class App(customtkinter.CTk):
             sound_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "Sounds")
             sound = vlc.MediaPlayer(os.path.join(sound_path, "TitleCallA" + str(randint(1, 20)) + ".mp3"))
             sound.play()
+            self.switch_back_char()
+        else:
+            self.home_frame_large_image_label.configure(image=self.large_test_image)
         self.home_button_1.configure(text="Start Kantai" if self.kantai_is_start==False else "Close Kantai")
 
     #Get name of current character as string
@@ -190,7 +219,39 @@ class App(customtkinter.CTk):
         new_text ='\n'.join(text[i:i+10] for i in range(0, length, 10))
         return new_text
     
-    #genearate button list for anime of the day
+    #load anime frame into desired frame
+    def load_anime_frame(self,frame):
+        self.date_widget =dict()
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        self.date_widget = self.list_to_widgets(days,frame,0)
+        for day in range(1,8):
+            list_anime = [sublist for sublist in self.anime_list if sublist[1] == day]
+            thread3 = Thread(target = self.generate_anime_list,args=(list_anime,self.date_widget[day-1]))
+            thread3.start()
+    
+    def list_to_widgets(self,list,frame,row):
+        col = 0
+        list_widget = dict()
+        for elements in list:
+            #initialize the buttons and connect callback function to open relative webpage. 
+            list_widget[col]=customtkinter.CTkScrollableFrame(frame, label_text=elements)
+            list_widget[col].grid(row=row+int(col/3), column=col%3, padx=20, pady=10)
+            col +=1
+        return list_widget
+    
+
+    def generate_anime_list(self,list,frame):
+        count = 0
+        self.list_buttons = dict()
+        for elements in list:
+            #initialize the buttons and connect callback function to open relative webpage. 
+            self.list_buttons[count]=customtkinter.CTkButton(frame, text=self.split_text(elements[0]), 
+                                                           image=self.get_img(elements[3]), compound="top",
+                                                           command=lambda a = elements[0]: self.open_web(a ))
+            self.list_buttons[count].grid(row=count, column=0, padx=20, pady=10)
+            count +=1
+
+    #genearate button list for anime of the day !!!! NEED TO chaneg to more general use
     def get_anime_list(self):
         count = 0
         self.anime_today = dict()
@@ -225,9 +286,13 @@ class App(customtkinter.CTk):
 
     def home_button_event(self):
         self.select_frame_by_name("home")
+        self.geometry("800x350")
 
     def frame_2_button_event(self):
         self.select_frame_by_name("frame_2")
+        self.geometry("1000x850")
+        thread2 = Thread(target = self.load_anime_frame,args=(self.second_frame,))
+        thread2.start()
 
     def frame_3_button_event(self):
         self.select_frame_by_name("frame_3")
