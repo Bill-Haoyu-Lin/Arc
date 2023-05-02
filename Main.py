@@ -121,7 +121,7 @@ class App(customtkinter.CTk):
         for anime in self.anime_list:
             if self.day_of_week == anime[1]:
                 #initialize the buttons and connect callback function to open relative webpage. 
-                self.anime_today[count]=customtkinter.CTkButton(self.home_buttons_frame, text=anime[0], 
+                self.anime_today[count]=customtkinter.CTkButton(self.home_buttons_frame, text=anime[0] + '\n' + anime[2], 
                                                             image=self.get_img(anime[3]), compound="top",
                                                             command=lambda a = anime[0]: self.open_web(a))
                 self.anime_today[count].grid(row=count, column=0, padx=20, pady=20)
