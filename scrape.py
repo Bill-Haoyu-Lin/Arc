@@ -1,3 +1,4 @@
+import re
 import datetime
 import requests
 from bs4 import BeautifulSoup
@@ -53,13 +54,23 @@ def anime_chs():
     
     for anime in animes:
         try:
-            name = anime.find('td', {'class':'date_title'}).text
-            date = anime.find('p', {'class':'imgtext'}).text[:-1] + '/' + curr_year
-            date = datetime.datetime.strptime(date, "%m/%d/%Y")
-            day = weekday[date.strftime("%A")]
-            time = anime.find('p', {'class':'imgep'}).text[:-1]
+            name = anime.find('td', class_=re.compile('^date_title.*')).text
+            date = anime.find('p', {'class':'imgtext'}).text.split('~')[0] + '/' + curr_year
+            time = anime.find('p', {'class':'imgep'}).text.split('~')[0]
             img = anime.find('img')['src']
             
+            # Change date to weekday
+            date = datetime.datetime.strptime(date, "%m/%d/%Y")
+            day = weekday[date.strftime("%A")]
+            
+            # Move time >= 24:00 to the next day
+            if int(time[:2]) >= 24:
+                time = '0' + str(int(time[:2]) - 24) + time[2:]
+                if day != 6:
+                    day += 1
+                else:
+                    day = 0
+
             anime_list.append([name, day, time, img])
         except:
             pass 
@@ -77,13 +88,19 @@ def anime_cht():
     
     for anime in animes:
         name = anime.find('div', {'class':'anime_name'}).text
-        day = weekday[anime.find_all('div', {'class':'day'})[1].text]
-        time = anime.find_all('div', {'class':'time'})[1].text
+        day = weekday[anime.find('div', {'class':'day'}).text]
+        time = anime.find('div', {'class':'time'}).text
         img = anime.find('img', {'class':'img-fit-cover'})['src']
         
         anime_list.append([name, day, time, img])
 
     return anime_list
+
+# Sort anime list based on weekday and time
+def sort_key(anime_list):
+    time = datetime.datetime.strptime(anime_list[2], '%H:%M')
+    
+    return (anime_list[1], time)
 
 # Get anime list based on desired language
 def get_anime(lang = 'chs'):
@@ -94,6 +111,7 @@ def get_anime(lang = 'chs'):
     elif lang == 'eng':
         anime_list = []
     
+    anime_list = sorted(anime_list, key=sort_key)
+    # for anime in anime_list:
+    #     print(anime)
     return anime_list
-
-print(get_anime('chs'))
