@@ -6,17 +6,20 @@ import requests
 import scrape
 import datetime
 from threading import Thread
+import psutil
+import sys
 
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("Arc")
-        self.geometry("800x350")
+        self.geometry("800x450")
 
         # set grid layout 1x2
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
+        
 
         #check day of week and import anime list 
         self.day_of_week = datetime.date.today().weekday()
@@ -31,12 +34,12 @@ class App(customtkinter.CTk):
                                                  dark_image=Image.open(os.path.join(image_path, "home_light.png")), size=(20, 20))
         self.chat_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "chat_dark.png")),
                                                  dark_image=Image.open(os.path.join(image_path, "chat_light.png")), size=(20, 20))
-        self.holder_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "holder.png")),
-                                                 dark_image=Image.open(os.path.join(image_path, "holder.png")), size=(100, 20))
+        self.bg_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "CustomTkinter_logo_single.png")),
+                                                 dark_image=Image.open(os.path.join(image_path, "CustomTkinter_logo_single.png")), size=(200, 200))
         self.add_user_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "add_user_dark.png")),
                                                      dark_image=Image.open(os.path.join(image_path, "add_user_light.png")), size=(20, 20))
-        self.anime_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "anime.png")),
-                                                 dark_image=Image.open(os.path.join(image_path, "anime.png")), size=(100, 100))
+        
+
     
         # create navigation frame
         self.navigation_frame = customtkinter.CTkFrame(self, corner_radius=0)
@@ -73,16 +76,21 @@ class App(customtkinter.CTk):
         self.clock_label = customtkinter.CTkLabel(self.home_frame,font=("Courier New", 15,'bold'), text='')
         self.clock_label.grid(row=0, column=0,columnspan=2, padx=2, pady=10)
 
-        self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_frame, text="", image=self.large_test_image)
+        self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_frame, text="", image=self.bg_image)
         self.home_frame_large_image_label.grid(row=1, column=0,columnspan=2, padx=20, pady=10)
         self.home_button_1 = customtkinter.CTkButton(self.home_frame, text=" Place Holder Function ")
         self.home_button_1.grid(row=2, column=0, padx=10, pady=10)
         self.home_button_2 = customtkinter.CTkButton(self.home_frame, text="Place Holder Function ",command = lambda:self.open_web("tianguo"))
         self.home_button_2.grid(row=2, column=1, padx=10, pady=10) 
 
+        self.home_sys_frame = customtkinter.CTkFrame(self.home_frame)
+        self.home_sys_frame.grid(row=3, column=0,columnspan=1,padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.get_sys_frame()
+
         self.home_buttons_frame = customtkinter.CTkScrollableFrame(self.home_frame, label_text="Anime List Today")
         self.home_buttons_frame.grid(row=0, column=2, rowspan=2,padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.home_buttons_frame.grid_columnconfigure(0, weight=1)
+
         thread1 = Thread(target = self.get_anime_list,args=())
         thread1.start()
 
@@ -103,9 +111,38 @@ class App(customtkinter.CTk):
         self.select_frame_by_name("home")
         self.check_time()
 
+    def get_sys_frame(self):
+        self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_sys_frame, text="CPU : ")
+        self.home_frame_large_image_label.grid(row=0, column=0, padx=10)
+        self.slider_cpu = customtkinter.CTkProgressBar(self.home_sys_frame, orientation="horizontal",width = 100)
+        self.slider_cpu.grid(row=0, column=1)
+
+        self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_sys_frame, text="RAM : ")
+        self.home_frame_large_image_label.grid(row=1, column=0, padx=10)
+        self.slider_memory = customtkinter.CTkProgressBar(self.home_sys_frame, orientation="horizontal",width = 100)
+        self.slider_memory.grid(row=1, column=1)
+
+        self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_sys_frame, text="DISK : ")
+        self.home_frame_large_image_label.grid(row=2, column=0, padx=10)
+        self.slider_disk = customtkinter.CTkProgressBar(self.home_sys_frame, orientation="horizontal",width = 100)
+        self.slider_disk.grid(row=2, column=1)
+
+
+    def check_sys(self):
+        cpu = psutil.cpu_percent()
+        disk = psutil.disk_usage('/').percent
+        memory = psutil.virtual_memory().percent
+        self.slider_cpu.set(cpu/100)
+        self.slider_disk.set(disk/100)
+        self.slider_memory.set(memory/100)
+
+
+
     def check_time(self):
         self.clock_label.configure(text=datetime.datetime.now().replace(microsecond=0))
         current_time = datetime.datetime.now()
+        self.thread2 = Thread(target = self.check_sys,args=())
+        self.thread2.start()
         self.clock_label.after(1000, self.check_time)
 
     def open_web(self,keyword):
@@ -165,3 +202,4 @@ class App(customtkinter.CTk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+    sys.exit()
