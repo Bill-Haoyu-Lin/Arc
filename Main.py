@@ -5,7 +5,7 @@ import webbrowser
 import requests
 import scrape
 import datetime
-import time
+from threading import Thread
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -83,7 +83,8 @@ class App(customtkinter.CTk):
         self.home_buttons_frame = customtkinter.CTkScrollableFrame(self.home_frame, label_text="Anime List")
         self.home_buttons_frame.grid(row=0, column=2, rowspan=2,padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.home_buttons_frame.grid_columnconfigure(0, weight=1)
-        self.get_anime_list()
+        thread1 = Thread(target = self.get_anime_list,args=())
+        thread1.start()
 
 
         # create second frame
