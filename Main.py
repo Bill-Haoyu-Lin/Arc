@@ -78,7 +78,7 @@ class App(customtkinter.CTk):
 
         self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_frame, text="", image=self.bg_image)
         self.home_frame_large_image_label.grid(row=1, column=0,columnspan=2, padx=20, pady=10)
-        self.home_button_1 = customtkinter.CTkButton(self.home_frame, text=" Place Holder Function ")
+        self.home_button_1 = customtkinter.CTkButton(self.home_frame, text=" Open Browser ",command = lambda:self.open_web(web="https://www.google.com/"))
         self.home_button_1.grid(row=2, column=0, padx=10, pady=10)
         self.home_button_2 = customtkinter.CTkButton(self.home_frame, text="Place Holder Function ",command = lambda:self.open_web("tianguo"))
         self.home_button_2.grid(row=2, column=1, padx=10, pady=10) 
@@ -115,17 +115,17 @@ class App(customtkinter.CTk):
         self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_sys_frame, text="CPU : ")
         self.home_frame_large_image_label.grid(row=0, column=0, padx=10)
         self.slider_cpu = customtkinter.CTkProgressBar(self.home_sys_frame, orientation="horizontal",width = 100)
-        self.slider_cpu.grid(row=0, column=1)
+        self.slider_cpu.grid(row=0, column=1,padx=(0,5))
 
         self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_sys_frame, text="RAM : ")
         self.home_frame_large_image_label.grid(row=1, column=0, padx=10)
         self.slider_memory = customtkinter.CTkProgressBar(self.home_sys_frame, orientation="horizontal",width = 100)
-        self.slider_memory.grid(row=1, column=1)
+        self.slider_memory.grid(row=1, column=1,padx=(0,5))
 
         self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_sys_frame, text="DISK : ")
         self.home_frame_large_image_label.grid(row=2, column=0, padx=10)
         self.slider_disk = customtkinter.CTkProgressBar(self.home_sys_frame, orientation="horizontal",width = 100)
-        self.slider_disk.grid(row=2, column=1)
+        self.slider_disk.grid(row=2, column=1,padx=(0,5))
 
 
     def check_sys(self):
@@ -145,8 +145,12 @@ class App(customtkinter.CTk):
         self.thread2.start()
         self.clock_label.after(1000, self.check_time)
 
-    def open_web(self,keyword):
-        webbrowser.open_new("https://www.iyf.tv/search/"+keyword)
+    def open_web(self,keyword='',web=''):
+        if web=='':
+            webbrowser.open_new("https://www.iyf.tv/search/"+keyword)
+        else:
+            webbrowser.open_new(web)
+
 
     def get_img(self, url, x = 100, y = 100):
         image = customtkinter.CTkImage(Image.open(requests.get(url, stream=True).raw), size=(x, y))
