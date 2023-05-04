@@ -80,7 +80,7 @@ class App(customtkinter.CTk):
         self.home_button_2 = customtkinter.CTkButton(self.home_frame, text="Place Holder Function ",command = lambda:self.open_web("tianguo"))
         self.home_button_2.grid(row=2, column=1, padx=10, pady=10) 
 
-        self.home_buttons_frame = customtkinter.CTkScrollableFrame(self.home_frame, label_text="Anime List")
+        self.home_buttons_frame = customtkinter.CTkScrollableFrame(self.home_frame, label_text="Anime List Today")
         self.home_buttons_frame.grid(row=0, column=2, rowspan=2,padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.home_buttons_frame.grid_columnconfigure(0, weight=1)
         thread1 = Thread(target = self.get_anime_list,args=())
