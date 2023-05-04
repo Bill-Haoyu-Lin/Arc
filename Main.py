@@ -7,16 +7,17 @@ import scrape
 import datetime
 import vlc
 from random import *
-#from web_widget import *
+from web_widget import *
 import webbrowser
 from threading import Thread
+import logging as _logging
 
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("Arc")
-        self.geometry("800x350")
+        self.geometry("800x450")
 
         self.browser_frame = None
 
@@ -25,13 +26,16 @@ class App(customtkinter.CTk):
         self.char_pos = 0
         self.kantai_is_start = False
 
+        
+
         # set grid layout 1x2
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
-        #check day of week and import anime list 
-        self.day_of_week = datetime.date.today().weekday()+1
-        self.anime_list = scrape.main()
+        #check day of week and import anime list (0 is Monday)(month (1–12), day (1–31)).
+        self.day_of_week = datetime.date.today().weekday()
+        self.anime_list = scrape.get_anime()
+        self.anime_next = self.upcoming_anime()
 
         # load images with light and dark mode image
         image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_images")
@@ -41,8 +45,8 @@ class App(customtkinter.CTk):
         self.image_icon_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "image_icon_light.png")), size=(100, 100))
         self.home_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "home_dark.png")),
                                                  dark_image=Image.open(os.path.join(image_path, "home_light.png")), size=(20, 20))
-        self.chat_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "chat_dark.png")),
-                                                 dark_image=Image.open(os.path.join(image_path, "chat_light.png")), size=(20, 20))
+        self.playlist_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "playlist_light.png")),
+                                                 dark_image=Image.open(os.path.join(image_path, "playlist_dark.png")), size=(20, 20))
         self.holder_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "holder.png")),
                                                  dark_image=Image.open(os.path.join(image_path, "holder.png")), size=(100, 20))
         self.add_user_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "add_user_dark.png")),
@@ -64,9 +68,9 @@ class App(customtkinter.CTk):
                                                    image=self.home_image, anchor="w", command=self.home_button_event)
         self.home_button.grid(row=1, column=0, sticky="ew")
 
-        self.frame_2_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Chat",
+        self.frame_2_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Playlist",
                                                       fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                      image=self.chat_image, anchor="w", command=self.frame_2_button_event)
+                                                      image=self.playlist_image, anchor="w", command=self.frame_2_button_event)
         self.frame_2_button.grid(row=2, column=0, sticky="ew")
 
         self.frame_3_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Add person",
@@ -99,17 +103,16 @@ class App(customtkinter.CTk):
         self.home_buttons_frame = customtkinter.CTkScrollableFrame(self.home_frame, label_text="Anime List")
         self.home_buttons_frame.grid(row=0, column=2, rowspan=3,padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.home_buttons_frame.grid_columnconfigure(0, weight=1)
+
+        self.upcoming_anime_btn = customtkinter.CTkButton(self.home_frame, text=self.anime_next[0],image=self.get_img(self.anime_next[3]),
+                                                     command = lambda:self.open_web(self.anime_next[0]))
+        self.upcoming_anime_btn.grid(row=3, column=2, padx=10, pady=10) 
         thread1 = Thread(target = self.get_anime_list,args=())
         thread1.start()
 
         # create second frame
         self.second_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
         
-        
-        
-        
-        
-
         # create third frame
         self.third_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
         # cef.Initialize()
@@ -119,7 +122,29 @@ class App(customtkinter.CTk):
         # select default frame
         self.select_frame_by_name("home")
         self.check_time()
+        web(self.third_frame)
 
+    def upcoming_anime(self):
+        current_time = datetime.datetime.now()
+        anime_today = [anime for anime in self.anime_list if anime[1] == self.day_of_week]
+        anime_tmr = [anime for anime in self.anime_list if anime[1] == (self.day_of_week+1)%7]
+        for anime in anime_today:
+            if int(anime[2].split(':')[0]) > current_time.hour: 
+                return anime
+            elif int(anime[2].split(':')[0]) == current_time.hour:
+                if int(anime[2].split(':')[1]) >= current_time.minute: 
+                    return anime
+        return anime_tmr[0]
+
+    def check_next_anime(self):
+        temp = self.upcoming_anime()
+        if temp == self.anime_next:
+            pass
+        else:
+            self.anime_next = temp
+            self.upcoming_anime_btn.config(text=self.anime_next[0],image=self.get_img(self.anime_next[3]),
+                                            command = lambda:self.open_web(self.anime_next[0]))
+    
     def change_char(self):
         if self.char_pos >= len(self.char_list)-1:
             self.char_pos-=len(self.char_list)-1
@@ -148,7 +173,7 @@ class App(customtkinter.CTk):
              self.play_sound("_Intro")
         else:
             pass
-        
+
     def switch_back_char(self):
          #get correct size of image to be a square   
         old_image = Image.open(os.path.join(self.char_path, self.get_cur_char()+".png" ))
@@ -198,6 +223,8 @@ class App(customtkinter.CTk):
         self.clock_label.configure(text=datetime.datetime.now().replace(microsecond=0))
         current_time = datetime.datetime.now()
         self.clock_label.after(1000, self.check_time)
+        self.day_of_week = datetime.date.today().weekday()
+        self.check_next_anime()
         if current_time.minute == 0 and current_time.second == 0:
             self.play_sound(str(current_time.hour))
             idle_times = [randint(5, 25),randint(35, 55)]
@@ -224,11 +251,12 @@ class App(customtkinter.CTk):
         self.date_widget =dict()
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         self.date_widget = self.list_to_widgets(days,frame,0)
-        for day in range(1,8):
+        for day in range(0,7):
             list_anime = [sublist for sublist in self.anime_list if sublist[1] == day]
-            thread3 = Thread(target = self.generate_anime_list,args=(list_anime,self.date_widget[day-1]))
+            thread3 = Thread(target = self.generate_anime_list,args=(list_anime,self.date_widget[day]))
             thread3.start()
     
+    #generate a list of widgets and output as a dictionary
     def list_to_widgets(self,list,frame,row):
         col = 0
         list_widget = dict()
@@ -239,13 +267,13 @@ class App(customtkinter.CTk):
             col +=1
         return list_widget
     
-
+    #generate a list of widgets in given tk frame by name from given list [name, day, time, img]
     def generate_anime_list(self,list,frame):
         count = 0
         self.list_buttons = dict()
         for elements in list:
             #initialize the buttons and connect callback function to open relative webpage. 
-            self.list_buttons[count]=customtkinter.CTkButton(frame, text=self.split_text(elements[0]), 
+            self.list_buttons[count]=customtkinter.CTkButton(frame, text=self.split_text(elements[0])+ '\n' + elements[2], 
                                                            image=self.get_img(elements[3]), compound="top",
                                                            command=lambda a = elements[0]: self.open_web(a ))
             self.list_buttons[count].grid(row=count, column=0, padx=20, pady=10)
@@ -275,8 +303,10 @@ class App(customtkinter.CTk):
             self.home_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.home_frame.grid_forget()
+            
         if name == "frame_2":
             self.second_frame.grid(row=0, column=1, sticky="nsew")
+            
         else:
             self.second_frame.grid_forget()
         if name == "frame_3":
@@ -296,6 +326,9 @@ class App(customtkinter.CTk):
 
     def frame_3_button_event(self):
         self.select_frame_by_name("frame_3")
+        self.geometry("960x640")
+        
+        
 
     def change_appearance_mode_event(self, new_appearance_mode):
         customtkinter.set_appearance_mode(new_appearance_mode)
@@ -304,3 +337,5 @@ class App(customtkinter.CTk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+    logger.debug("Main loop exited")
+    cef.Shutdown()
