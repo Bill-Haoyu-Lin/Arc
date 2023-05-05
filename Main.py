@@ -8,13 +8,14 @@ import datetime
 from threading import Thread
 import psutil
 import sys
+import winreg
 
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("Arc")
-        self.geometry("800x450")
+        self.geometry("900x450")
 
         # set grid layout 1x2
         self.grid_rowconfigure(0, weight=1)
@@ -84,15 +85,17 @@ class App(customtkinter.CTk):
         self.home_button_2.grid(row=2, column=1, padx=10, pady=10) 
 
         self.home_sys_frame = customtkinter.CTkFrame(self.home_frame)
-        self.home_sys_frame.grid(row=3, column=0,columnspan=1,padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.home_sys_frame.grid(row=3, column=0,padx=(20, 0), pady=(20, 0), sticky="n")
         self.get_sys_frame()
 
-        self.home_buttons_frame = customtkinter.CTkScrollableFrame(self.home_frame, label_text="Anime List Today")
-        self.home_buttons_frame.grid(row=0, column=2, rowspan=2,padx=(20, 0), pady=(20, 0), sticky="nsew")
-        self.home_buttons_frame.grid_columnconfigure(0, weight=1)
-
-        thread1 = Thread(target = self.get_anime_list,args=())
-        thread1.start()
+        # self.home_buttons_frame = customtkinter.CTkScrollableFrame(self.home_frame, label_text="Anime List Today")
+        # self.home_buttons_frame.grid(row=0, column=2, rowspan=2,padx=(20, 0), pady=(20, 0), sticky="nsew")
+        # self.home_buttons_frame.grid_columnconfigure(0, weight=1)
+        # thread1 = Thread(target = self.get_anime_list,args=())
+        # thread1.start()
+        recent_file,recent_files_path= self.check_recent_file()
+        self.recent_file_widget(row=0, col=2,parent_frame=self.home_frame,file_list=recent_file,
+                                path_list=recent_files_path,rowspan=3,columnspan =1 )
 
 
         # create second frame
@@ -111,23 +114,47 @@ class App(customtkinter.CTk):
         self.select_frame_by_name("home")
         self.check_time()
 
+    #Get System Information Widget setup.
     def get_sys_frame(self):
-        self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_sys_frame, text="CPU : ")
-        self.home_frame_large_image_label.grid(row=0, column=0, padx=10)
+        self.CPU_label = customtkinter.CTkLabel(self.home_sys_frame, text="CPU : ")
+        self.CPU_label.grid(row=0, column=0, padx=10)
         self.slider_cpu = customtkinter.CTkProgressBar(self.home_sys_frame, orientation="horizontal",width = 100)
         self.slider_cpu.grid(row=0, column=1,padx=(0,5))
 
-        self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_sys_frame, text="RAM : ")
-        self.home_frame_large_image_label.grid(row=1, column=0, padx=10)
+        self.RAM_label = customtkinter.CTkLabel(self.home_sys_frame, text="RAM : ")
+        self.RAM_label.grid(row=1, column=0, padx=10)
         self.slider_memory = customtkinter.CTkProgressBar(self.home_sys_frame, orientation="horizontal",width = 100)
         self.slider_memory.grid(row=1, column=1,padx=(0,5))
 
-        self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_sys_frame, text="DISK : ")
-        self.home_frame_large_image_label.grid(row=2, column=0, padx=10)
+        self.DISK_label = customtkinter.CTkLabel(self.home_sys_frame, text="DISK : ")
+        self.DISK_label.grid(row=2, column=0, padx=10)
         self.slider_disk = customtkinter.CTkProgressBar(self.home_sys_frame, orientation="horizontal",width = 100)
         self.slider_disk.grid(row=2, column=1,padx=(0,5))
 
+    #Return the most recent 20 files (on WIN only)
+    def check_recent_file(self):
+        recent_files_dir = os.path.join(os.environ['APPDATA'], 'Microsoft', 'Windows', 'Recent')
+        # Get the list of recent files     
+        recent_files_path = [os.path.join(recent_files_dir, f) for f in os.listdir(recent_files_dir)]
+        recent_files_path = sorted(recent_files_path, key=os.path.getmtime, reverse=True)
+        recent_files_path = recent_files_path[0:20]
+        recent_files = [f.split('\\')[-1].strip(".lnk") for f in recent_files_path]
+        return recent_files , recent_files_path
+    
+    #Method for generating recent file widget
+    def recent_file_widget(self,row,col,parent_frame,file_list,path_list,rowspan,columnspan):
+        main_frame = customtkinter.CTkScrollableFrame(parent_frame, label_text="Recent File",orientation="vertical",width=300,height=100)
+        main_frame.grid(row=row, column=col,rowspan = rowspan,columnspan =columnspan,padx=(20, 0), pady=(20, 0), sticky = 'n')
+        main_frame_list=dict()
+        count = 0
+        for element in file_list:
+            main_frame_list[count]=customtkinter.CTkButton(main_frame, text=self.split_text(element,20), 
+                                                            command=lambda a = path_list[count]: os.startfile(a))
+            main_frame_list[count].grid(row=count%10, column=0+int(count/10), padx=5, pady=5, sticky = 'w')
+            count += 1
+        return main_frame_list
 
+    #Return the most recent 20 files (on WIN only)
     def check_sys(self):
         cpu = psutil.cpu_percent()
         disk = psutil.disk_usage('/').percent
@@ -136,8 +163,7 @@ class App(customtkinter.CTk):
         self.slider_disk.set(disk/100)
         self.slider_memory.set(memory/100)
 
-
-
+    #Get System Information Widget update every 1 second with check_time.
     def check_time(self):
         self.clock_label.configure(text=datetime.datetime.now().replace(microsecond=0))
         current_time = datetime.datetime.now()
@@ -145,13 +171,19 @@ class App(customtkinter.CTk):
         self.thread2.start()
         self.clock_label.after(1000, self.check_time)
 
+    #Method for open web with either keyword or URL
     def open_web(self,keyword='',web=''):
         if web=='':
             webbrowser.open_new("https://www.iyf.tv/search/"+keyword)
         else:
             webbrowser.open_new(web)
 
+    def split_text(self,text,width):
+        length = len(text)
+        new_text ='\n'.join(text[i:i+width] for i in range(0, length, width))
+        return new_text
 
+    #Method for generate CTKImage from URL 
     def get_img(self, url, x = 100, y = 100):
         image = customtkinter.CTkImage(Image.open(requests.get(url, stream=True).raw), size=(x, y))
         return image
@@ -169,7 +201,7 @@ class App(customtkinter.CTk):
                 self.anime_today[count].grid(row=count, column=0, padx=20, pady=20)
                 count += 1
     
-
+    #Method for switch frame by tab 
     def select_frame_by_name(self, name):
         # set button color for selected button
         self.home_button.configure(fg_color=("gray75", "gray25") if name == "home" else "transparent")
