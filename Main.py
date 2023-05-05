@@ -9,6 +9,7 @@ from threading import Thread
 import psutil
 import sys
 import winreg
+from anime_widget import anime_widget
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -68,7 +69,7 @@ class App(customtkinter.CTk):
 
         self.appearance_mode_menu = customtkinter.CTkOptionMenu(self.navigation_frame, values=["Light", "Dark", "System"],
                                                                 command=self.change_appearance_mode_event)
-        self.appearance_mode_menu.grid(row=6, column=0, padx=20, pady=20, sticky="s")
+        self.appearance_mode_menu.grid(row=10, column=0, padx=20, pady=20, sticky="s")
 
         # create home frame
         self.home_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
@@ -96,14 +97,19 @@ class App(customtkinter.CTk):
         recent_file,recent_files_path= self.check_recent_file()
         self.recent_file_widget(row=0, col=2,parent_frame=self.home_frame,file_list=recent_file,
                                 path_list=recent_files_path,rowspan=3,columnspan =1 )
+        anime_home = anime_widget()
+
+        anime_home.home_widget_upcoming(parent_frame=self.home_frame,row=3,col=2)
+        self.anime_frame = anime_home.anime_frame(self)
+        anime_tab = anime_home.home_widget_tab(parent_frame = self.navigation_frame,anime_frame=self.anime_frame,row=4)
 
 
-        # create second frame
+        # create second frame 
         self.second_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
-        self.home_frame_large_image_label = customtkinter.CTkLabel(self.second_frame, text="", image=self.large_test_image)
-        self.home_frame_large_image_label.grid(row=0, column=0, padx=20, pady=10)
-        self.frame_2_button_4 = customtkinter.CTkButton(self.second_frame, text="CTkButton", image=self.image_icon_image, compound="right", anchor="center")
-        self.frame_2_button_4.grid(row=1, column=0, padx=20, pady=10)
+        # self.home_frame_large_image_label = customtkinter.CTkLabel(self.second_frame, text="", image=self.large_test_image)
+        # self.home_frame_large_image_label.grid(row=0, column=0, padx=20, pady=10)
+        # self.frame_2_button_4 = customtkinter.CTkButton(self.second_frame, text="CTkButton", image=self.image_icon_image, compound="right", anchor="center")
+        # self.frame_2_button_4.grid(row=1, column=0, padx=20, pady=10)
 
 
         # create third frame
@@ -207,10 +213,12 @@ class App(customtkinter.CTk):
         self.home_button.configure(fg_color=("gray75", "gray25") if name == "home" else "transparent")
         self.frame_2_button.configure(fg_color=("gray75", "gray25") if name == "frame_2" else "transparent")
         self.frame_3_button.configure(fg_color=("gray75", "gray25") if name == "frame_3" else "transparent")
+        
 
         # show selected frame
         if name == "home":
             self.home_frame.grid(row=0, column=1, sticky="nsew")
+            self.geometry("900x450")
         else:
             self.home_frame.grid_forget()
         if name == "frame_2":
@@ -221,6 +229,7 @@ class App(customtkinter.CTk):
             self.third_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.third_frame.grid_forget()
+        self.anime_frame.grid_forget()
 
     def home_button_event(self):
         self.select_frame_by_name("home")
