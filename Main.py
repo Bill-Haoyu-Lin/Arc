@@ -22,10 +22,12 @@ class App(customtkinter.CTk):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         
-
+        
         #check day of week and import anime list 
         self.day_of_week = datetime.date.today().weekday()
         self.anime_list = scrape.get_anime()
+        self.frame_list = []
+        self.tab_list = []
 
         # load images with light and dark mode image
         image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_images")
@@ -56,16 +58,19 @@ class App(customtkinter.CTk):
                                                    fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
                                                    image=self.home_image, anchor="w", command=self.home_button_event)
         self.home_button.grid(row=1, column=0, sticky="ew")
+        self.tab_list.append(self.home_button)
 
         self.frame_2_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Chat",
                                                       fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
                                                       image=self.chat_image, anchor="w", command=self.frame_2_button_event)
         self.frame_2_button.grid(row=2, column=0, sticky="ew")
+        self.tab_list.append(self.frame_2_button)
 
         self.frame_3_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Add person",
                                                       fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
                                                       image=self.add_user_image, anchor="w", command=self.frame_3_button_event)
         self.frame_3_button.grid(row=3, column=0, sticky="ew")
+        self.tab_list.append(self.frame_3_button)
 
         self.appearance_mode_menu = customtkinter.CTkOptionMenu(self.navigation_frame, values=["Light", "Dark", "System"],
                                                                 command=self.change_appearance_mode_event)
@@ -74,6 +79,7 @@ class App(customtkinter.CTk):
         # create home frame
         self.home_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.home_frame.grid_columnconfigure(0, weight=1)
+        self.frame_list.append(self.home_frame)
 
         self.clock_label = customtkinter.CTkLabel(self.home_frame,font=("Courier New", 15,'bold'), text='')
         self.clock_label.grid(row=0, column=0,columnspan=2, padx=2, pady=10)
@@ -97,11 +103,14 @@ class App(customtkinter.CTk):
         recent_file,recent_files_path= self.check_recent_file()
         self.recent_file_widget(row=0, col=2,parent_frame=self.home_frame,file_list=recent_file,
                                 path_list=recent_files_path,rowspan=3,columnspan =1 )
-        anime_home = anime_widget()
-
-        anime_home.home_widget_upcoming(parent_frame=self.home_frame,row=3,col=2)
-        self.anime_frame = anime_home.anime_frame(self)
-        anime_tab = anime_home.home_widget_tab(parent_frame = self.navigation_frame,anime_frame=self.anime_frame,row=4)
+        
+        self.anime_home = anime_widget()
+        upcoming_anime = self.anime_home.home_widget_upcoming(parent_frame=self.home_frame,row=3,col=2)
+        self.anime_frame = self.anime_home.anime_frame(parent_frame = self)
+        
+        anime_tab = self.anime_home.home_widget_tab(parent_frame = self.navigation_frame,anime_frame=self.anime_frame,row=4)
+        anime_tab.configure(command=lambda:self.frame_4_button_event())
+        self.tab_list.append(anime_tab)
 
 
         # create second frame 
@@ -110,14 +119,15 @@ class App(customtkinter.CTk):
         # self.home_frame_large_image_label.grid(row=0, column=0, padx=20, pady=10)
         # self.frame_2_button_4 = customtkinter.CTkButton(self.second_frame, text="CTkButton", image=self.image_icon_image, compound="right", anchor="center")
         # self.frame_2_button_4.grid(row=1, column=0, padx=20, pady=10)
-
+        self.frame_list.append(self.second_frame)
 
         # create third frame
         self.third_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
-
+        self.frame_list.append(self.third_frame)
+        self.frame_list.append(self.anime_frame)
 
         # select default frame
-        self.select_frame_by_name("home")
+        self.select_frame_by_num(0)
         self.check_time()
 
     #Get System Information Widget setup.
@@ -207,38 +217,40 @@ class App(customtkinter.CTk):
                 self.anime_today[count].grid(row=count, column=0, padx=20, pady=20)
                 count += 1
     
-    #Method for switch frame by tab 
-    def select_frame_by_name(self, name):
-        # set button color for selected button
-        self.home_button.configure(fg_color=("gray75", "gray25") if name == "home" else "transparent")
-        self.frame_2_button.configure(fg_color=("gray75", "gray25") if name == "frame_2" else "transparent")
-        self.frame_3_button.configure(fg_color=("gray75", "gray25") if name == "frame_3" else "transparent")
-        
+    def select_frame_by_num(self,num):
+        self.tab_list[num].configure(fg_color=("gray75", "gray25"))
+        count = 0
+        for tabs in self.tab_list:
+            if count != num:
+                tabs.configure(fg_color="transparent")
+            else:
+                pass
+            count+=1
+        self.frame_list[num].grid(row=0, column=1, sticky="nsew")
+        count = 0
+        for frame in self.frame_list:
+            if count != num:
+                frame.grid_forget()
+            else:
+                pass
+            count+=1
 
-        # show selected frame
-        if name == "home":
-            self.home_frame.grid(row=0, column=1, sticky="nsew")
-            self.geometry("900x450")
-        else:
-            self.home_frame.grid_forget()
-        if name == "frame_2":
-            self.second_frame.grid(row=0, column=1, sticky="nsew")
-        else:
-            self.second_frame.grid_forget()
-        if name == "frame_3":
-            self.third_frame.grid(row=0, column=1, sticky="nsew")
-        else:
-            self.third_frame.grid_forget()
-        self.anime_frame.grid_forget()
+
 
     def home_button_event(self):
-        self.select_frame_by_name("home")
+        self.geometry("900x450")
+        self.select_frame_by_num(0)
 
     def frame_2_button_event(self):
-        self.select_frame_by_name("frame_2")
+        self.select_frame_by_num(1)
 
     def frame_3_button_event(self):
-        self.select_frame_by_name("frame_3")
+        self.select_frame_by_num(2)
+    
+    def frame_4_button_event(self):
+        self.geometry("1000x850")
+        
+        self.select_frame_by_num(3)
 
     def change_appearance_mode_event(self, new_appearance_mode):
         customtkinter.set_appearance_mode(new_appearance_mode)

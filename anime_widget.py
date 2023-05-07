@@ -9,7 +9,6 @@ from threading import Thread
 
 class anime_widget():
     def __init__(self):
-        super().__init__()
         image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_images")
         self.playlist_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "playlist_light.png")),
                                                  dark_image=Image.open(os.path.join(image_path, "playlist_dark.png")), size=(20, 20))
@@ -86,20 +85,24 @@ class anime_widget():
     def anime_frame(self,parent_frame):
         self.master_frame = parent_frame
         anime_frame = customtkinter.CTkFrame(parent_frame, corner_radius=0, fg_color="transparent")
+        self.load_anime_frame(anime_frame)
         return anime_frame
-
+    
+#USELESS
     def select_frame(self,parent_frame,parent_btn):
-        parent_btn.configure(fg_color=("gray75", "gray25"))
-        parent_frame.grid(row=0, column=1, sticky="nsew")
+        #parent_btn.configure(fg_color=("gray75", "gray25"))
+        #parent_frame.grid(row=0, column=1, sticky="nsew")
         self.master_frame.geometry("1000x850")
-        parent_btn.configure(fg_color="transparent")
+        #parent_btn.configure(fg_color="transparent")
         self.load_anime_frame(parent_frame)
-
+#USELESS
         
     def home_widget_tab(self,parent_frame,anime_frame,row):
+        
         anime_frame_button = customtkinter.CTkButton(parent_frame, corner_radius=0, height=40, border_spacing=10, text="Anime",
                                                       fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                      image=self.playlist_image, anchor="w", command=lambda:self.select_frame(anime_frame,anime_frame_button))
+                                                      image=self.playlist_image, anchor="w")
+        #anime_frame_button.configure(command=lambda a=anime_frame,b =anime_frame_button:self.select_frame(a,b))
         anime_frame_button.grid(row=row, column=0, sticky="new")
 
         return anime_frame_button
