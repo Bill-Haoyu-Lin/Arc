@@ -35,13 +35,13 @@ curr_month = now.month
 # Spring, summer, fall, winter season
 def get_curr_season(eng = False):
     if curr_month >= 1 and curr_month <= 3:
-        curr_season = curr_year + '01'
+        curr_season = (curr_year + '/winter') if eng else (curr_year + '01')
     elif curr_month >= 4 and curr_month <= 6:
         curr_season = (curr_year + '/spring') if eng else (curr_year + '04')
     elif curr_month >= 7 and curr_month <= 9:
-        curr_season = curr_year + '07'
+        curr_season = (curr_year + '/summer') if eng else (curr_year + '07')
     elif curr_month >= 10 and curr_month <= 12:
-        curr_season = curr_year + '10'
+        curr_season = (curr_year + '/fall') if eng else (curr_year + '10')
     
     return curr_season
 
