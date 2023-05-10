@@ -1,4 +1,5 @@
 import re
+import pytz
 import datetime
 import requests
 from bs4 import BeautifulSoup
@@ -27,22 +28,41 @@ weekday = {
 }
 
 # Get current month and year
-now = datetime.datetime.now()
+now = datetime.datetime.now().replace(second=0, microsecond=0)
 curr_year = str(now.year)
 curr_month = now.month
 
 # Spring, summer, fall, winter season
-def get_curr_season():
+def get_curr_season(eng = False):
     if curr_month >= 1 and curr_month <= 3:
-        curr_season = curr_year + '01'
+        curr_season = (curr_year + '/winter') if eng else (curr_year + '01')
     elif curr_month >= 4 and curr_month <= 6:
-        curr_season = curr_year + '04'
+        curr_season = (curr_year + '/spring') if eng else (curr_year + '04')
     elif curr_month >= 7 and curr_month <= 9:
-        curr_season = curr_year + '07'
+        curr_season = (curr_year + '/summer') if eng else (curr_year + '07')
     elif curr_month >= 10 and curr_month <= 12:
-        curr_season = curr_year + '10'
+        curr_season = (curr_year + '/fall') if eng else (curr_year + '10')
     
     return curr_season
+
+# Convert anime start day & time from China Standard Time to local time zone
+def to_local_time(day, time, zone = 'cst'):
+    tz = pytz.timezone('Asia/Shanghai') if zone == 'cst' else pytz.timezone('Asia/Tokyo')
+    web_time = datetime.datetime.now(tz).replace(second=0, microsecond=0, tzinfo=None)
+    time_diff = int((now - web_time).total_seconds() / 3600)
+    hour = int(time[:2]) + time_diff
+    
+    if hour < 0:
+        hour = 24 + hour
+        time = '0' + str(hour) + time[2:] if hour < 10 else str(hour) + time[2:]
+        if day != 0:
+            day -= 1
+        else:
+            day = 6
+    else:
+        time = '0' + str(hour) + time[2:] if hour < 10 else str(hour) + time[2:]
+        
+    return day, time
 
 # Source: yuc.wiki, language: Chinese Simplified
 def anime_chs():
@@ -71,6 +91,7 @@ def anime_chs():
                 else:
                     day = 0
 
+            day, time = to_local_time(day, time)
             anime_list.append([name, day, time, img])
         except:
             pass 
@@ -92,10 +113,43 @@ def anime_cht():
         time = anime.find('div', {'class':'time'}).text
         img = anime.find('img', {'class':'img-fit-cover'})['src']
         
+        day, time = to_local_time(day, time)
         anime_list.append([name, day, time, img])
 
     return anime_list
 
+# Helper function for anime_eng()
+# Get weekday and time for specific anime on myanimelist.net
+def get_date_time(url):
+    page_text = requests.get(url=url, headers=headers).content
+    soup = BeautifulSoup(page_text, 'html.parser')
+    content = soup.find('span', string=re.compile('Broadcast:')).next_sibling.strip().split()
+    
+    day = weekday[content[0][:-1]]
+    time = content[2]
+    zone = content[3][1:-1]
+    
+    return to_local_time(day, time, zone)
+
+def anime_eng():
+    anime_list = []
+    url = 'https://myanimelist.net/anime/season/{}'.format(get_curr_season(True))
+    page_text = requests.get(url=url, headers=headers).content
+    soup = BeautifulSoup(page_text, 'html.parser')
+    content = soup.find('div', {'class':'seasonal-anime-list js-seasonal-anime-list js-seasonal-anime-list-key-1'})
+    animes = content.find_all('div', {'class':'js-anime-category-producer seasonal-anime js-seasonal-anime js-anime-type-all js-anime-type-1'})
+    
+    for anime in animes:
+        name = anime.find('span', {'class':'js-title'}).text
+        link = anime.find('a')['href']
+        day, time = get_date_time(link)
+        img_tag = anime.find('img')
+        img = img_tag.get('src') or img_tag.get('data-src')
+        
+        anime_list.append([name, day, time, img])
+    
+    return anime_list
+    
 # Sort anime list based on weekday and time
 def sort_key(anime_list):
     time = datetime.datetime.strptime(anime_list[2], '%H:%M')
@@ -109,7 +163,7 @@ def get_anime(lang = 'chs'):
     elif lang == 'cht':
         anime_list = anime_cht()
     elif lang == 'eng':
-        anime_list = []
+        anime_list = anime_eng()
     
     anime_list = sorted(anime_list, key=sort_key)
     # for anime in anime_list:
