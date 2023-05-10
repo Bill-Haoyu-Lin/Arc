@@ -39,6 +39,7 @@ class anime_widget():
         for day in range(0,7):
             list_anime = [sublist for sublist in self.anime_list if sublist[1] == day]
             thread3 = Thread(target = self.generate_anime_list,args=(list_anime,self.date_widget[day]))
+            thread3.setDaemon(True)
             thread3.start()
     
     #generate a list of widgets and output as a dictionary
@@ -76,11 +77,22 @@ class anime_widget():
                     return anime
         return anime_tmr[0]
     
-    def home_widget_upcoming(self,parent_frame,row,col):
-        upcoming_anime_btn = customtkinter.CTkButton(parent_frame, text="Upcoming :\n"+self.anime_next[0],image=self.get_img(self.anime_next[3]),
+    def anime_refresh(self):
+        temp = self.upcoming_anime()
+        if temp == self.anime_next:
+            return False
+        else:
+            self.anime_next = temp
+            self.upcoming_anime_btn.configure(text="Upcoming :\n"+self.anime_next[0],image=self.get_img(self.anime_next[3]),
                                                      command = lambda:self.open_web(self.anime_next[0]))
-        upcoming_anime_btn.grid(row=row, column=col, padx=10, pady=10,sticky = 'w') 
-        return upcoming_anime_btn
+            return True
+    
+    def home_widget_upcoming(self,parent_frame,row,col):
+        self.upcoming_anime_btn = customtkinter.CTkButton(parent_frame, text="Upcoming :\n"+self.split_text(self.anime_next[0],10),
+                                                          image=self.get_img(self.anime_next[3]),
+                                                          command = lambda:self.open_web(self.anime_next[0]))
+        self.upcoming_anime_btn.grid(row=row, column=col, padx=10, pady=10) 
+        return self.upcoming_anime_btn
     
     def anime_frame(self,parent_frame):
         self.master_frame = parent_frame
@@ -88,21 +100,20 @@ class anime_widget():
         self.load_anime_frame(anime_frame)
         return anime_frame
     
-#USELESS
-    def select_frame(self,parent_frame,parent_btn):
-        #parent_btn.configure(fg_color=("gray75", "gray25"))
-        #parent_frame.grid(row=0, column=1, sticky="nsew")
-        self.master_frame.geometry("1000x850")
-        #parent_btn.configure(fg_color="transparent")
-        self.load_anime_frame(parent_frame)
-#USELESS
+# #USELESS
+#     def select_frame(self,parent_frame,parent_btn):
+#         #parent_btn.configure(fg_color=("gray75", "gray25"))
+#         #parent_frame.grid(row=0, column=1, sticky="nsew")
+#         self.master_frame.geometry("1000x850")
+#         #parent_btn.configure(fg_color="transparent")
+#         self.load_anime_frame(parent_frame)
+# #USELESS
         
     def home_widget_tab(self,parent_frame,anime_frame,row):
         
         anime_frame_button = customtkinter.CTkButton(parent_frame, corner_radius=0, height=40, border_spacing=10, text="Anime",
                                                       fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                      image=self.playlist_image, anchor="w")
-        #anime_frame_button.configure(command=lambda a=anime_frame,b =anime_frame_button:self.select_frame(a,b))
+                                                      image=self.playlist_image, anchor="nswe")
         anime_frame_button.grid(row=row, column=0, sticky="new")
 
         return anime_frame_button

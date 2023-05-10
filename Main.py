@@ -3,6 +3,7 @@ import os
 from PIL import Image
 import webbrowser
 import requests
+from bs4 import BeautifulSoup
 import scrape
 import datetime
 from threading import Thread
@@ -10,13 +11,13 @@ import psutil
 import sys
 import winreg
 from anime_widget import anime_widget
+import PIL.ImageOps    
 
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-
         self.title("Arc")
-        self.geometry("900x450")
+        self.geometry("750x450")
 
         # set grid layout 1x2
         self.grid_rowconfigure(0, weight=1)
@@ -91,7 +92,7 @@ class App(customtkinter.CTk):
         self.home_button_2 = customtkinter.CTkButton(self.home_frame, text="Place Holder Function ",command = lambda:self.open_web("tianguo"))
         self.home_button_2.grid(row=2, column=1, padx=10, pady=10) 
 
-        self.home_sys_frame = customtkinter.CTkFrame(self.home_frame)
+        self.home_sys_frame = customtkinter.CTkFrame(self.home_frame,fg_color=("gray80", "gray15"))
         self.home_sys_frame.grid(row=3, column=0,padx=(20, 0), pady=(20, 0), sticky="n")
         self.get_sys_frame()
 
@@ -104,6 +105,11 @@ class App(customtkinter.CTk):
         self.recent_file_widget(row=0, col=2,parent_frame=self.home_frame,file_list=recent_file,
                                 path_list=recent_files_path,rowspan=3,columnspan =1 )
         
+        self.home_weather_frame = customtkinter.CTkFrame(self.home_frame,fg_color=("gray80", "gray15"))
+        self.home_weather_frame.grid(row=3, column=1,padx=(10, 10), pady=(20, 0), sticky="n")
+        self.home_weather_label = customtkinter.CTkLabel(self.home_weather_frame,justify = 'right')
+        self.home_weather_label.grid(padx=(20, 20), pady=(13, 13), sticky="w")
+
         self.anime_home = anime_widget()
         upcoming_anime = self.anime_home.home_widget_upcoming(parent_frame=self.home_frame,row=3,col=2)
         self.anime_frame = self.anime_home.anime_frame(parent_frame = self)
@@ -129,6 +135,31 @@ class App(customtkinter.CTk):
         # select default frame
         self.select_frame_by_num(0)
         self.check_time()
+        self.weather()
+
+    def weather(self):
+        city = "weather"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+        res = requests.get(
+            f'https://www.google.com/search?q={city}&oq={city}&aqs=chrome.0.35i39l2j0l4j46j69i60.6128j1j7&sourceid=chrome&ie=UTF-8', headers=headers)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        time = soup.select('#wob_dts')[0].getText().strip().split()[0]
+        info = soup.select('#wob_dc')[0].getText().strip()
+        weather = soup.select('#wob_tm')[0].getText().strip()
+        weather_img ="http://"+soup.select('#wob_tci')[0].get('src').strip("//")
+        humidity = soup.select('#wob_hm')[0].getText().strip()
+        wind = soup.select('#wob_ws')[0].getText().strip()
+        image = Image.open(requests.get(weather_img, stream=True).raw)
+        image = customtkinter.CTkImage(image, size=(50, 50))
+        self.home_weather_label.configure(text=time+"\n"+weather+"°C"+"\n"+humidity+"\n"+wind, image=image,compound="left")
+        # print(time)
+        # print(info)
+        # print(weather+"°C")
+        # print(weather_img)
+        # print(humidity)
+        # print(wind)
+        self.home_weather_label.after(60000, self.weather)
+        
 
     #Get System Information Widget setup.
     def get_sys_frame(self):
@@ -159,14 +190,15 @@ class App(customtkinter.CTk):
     
     #Method for generating recent file widget
     def recent_file_widget(self,row,col,parent_frame,file_list,path_list,rowspan,columnspan):
-        main_frame = customtkinter.CTkScrollableFrame(parent_frame, label_text="Recent File",orientation="vertical",width=300,height=100)
-        main_frame.grid(row=row, column=col,rowspan = rowspan,columnspan =columnspan,padx=(20, 0), pady=(20, 0), sticky = 'n')
+        main_frame = customtkinter.CTkScrollableFrame(parent_frame, label_text="Recent File",orientation="vertical",width=150,height=100)
+        main_frame.grid(row=row, column=col,rowspan = rowspan,columnspan =1,padx=(20, 20), pady=(20, 20), sticky = 'ns')
         main_frame_list=dict()
         count = 0
         for element in file_list:
             main_frame_list[count]=customtkinter.CTkButton(main_frame, text=self.split_text(element,20), 
                                                             command=lambda a = path_list[count]: os.startfile(a))
-            main_frame_list[count].grid(row=count%10, column=0+int(count/10), padx=5, pady=5, sticky = 'w')
+            #main_frame_list[count].grid(row=count%10, column=0+int(count/10), padx=5, pady=5, sticky = 'w')
+            main_frame_list[count].grid(row=count, column=0, padx=5, pady=5, sticky = 'w')
             count += 1
         return main_frame_list
 
@@ -178,12 +210,14 @@ class App(customtkinter.CTk):
         self.slider_cpu.set(cpu/100)
         self.slider_disk.set(disk/100)
         self.slider_memory.set(memory/100)
+        self.tab_refresh()
 
     #Get System Information Widget update every 1 second with check_time.
     def check_time(self):
         self.clock_label.configure(text=datetime.datetime.now().replace(microsecond=0))
         current_time = datetime.datetime.now()
         self.thread2 = Thread(target = self.check_sys,args=())
+        self.thread2.setDaemon(True)
         self.thread2.start()
         self.clock_label.after(1000, self.check_time)
 
@@ -216,7 +250,8 @@ class App(customtkinter.CTk):
                                                             command=lambda a = anime[0]: self.open_web(a))
                 self.anime_today[count].grid(row=count, column=0, padx=20, pady=20)
                 count += 1
-    
+
+    #rewrite default select_frame by name method
     def select_frame_by_num(self,num):
         self.tab_list[num].configure(fg_color=("gray75", "gray25"))
         count = 0
@@ -235,10 +270,11 @@ class App(customtkinter.CTk):
                 pass
             count+=1
 
-
+    def tab_refresh(self):
+        self.anime_home.anime_refresh()
 
     def home_button_event(self):
-        self.geometry("900x450")
+        self.geometry("750x450")
         self.select_frame_by_num(0)
 
     def frame_2_button_event(self):
@@ -249,7 +285,6 @@ class App(customtkinter.CTk):
     
     def frame_4_button_event(self):
         self.geometry("1000x850")
-        
         self.select_frame_by_num(3)
 
     def change_appearance_mode_event(self, new_appearance_mode):
